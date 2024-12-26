@@ -1,9 +1,7 @@
 package httpcore
 
 import (
-	"crypto/sha512"
 	"crypto/subtle"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/CSSUoB/society-voting/internal/config"
@@ -40,23 +38,8 @@ func (endpoints) authLogin(ctx *fiber.Ctx) error {
 
 	var requestData = struct {
 		StudentID            string `json:"studentid,omitempty"`
-		Password             string `json:"password,omitempty"`
-		PasswordConfirmation string `json:"passwordconf,omitempty"`
-		FirstName            string `json:"fname,omitempty"`
-		LastName             string `json:"lname,omitempty"`
-		AuthCode             string `json:"auth,omitempty"`
 	}{
 		StudentID:            strings.TrimSpace(ctx.FormValue("studentid")),
-		Password:             ctx.FormValue("password"),
-		PasswordConfirmation: ctx.FormValue("passwordconf"),
-		FirstName:            strings.TrimSpace(ctx.FormValue("fname")),
-		LastName:             strings.TrimSpace(ctx.FormValue("lname")),
-		AuthCode:             ctx.FormValue("auth"),
-	}
-
-	requestDataJSON, err := json.Marshal(&requestData)
-	if err != nil {
-		return fmt.Errorf("authLogin marshal request data to JSON: %w", err)
 	}
 
 	if ctx.Method() == fiber.MethodGet {
@@ -70,32 +53,14 @@ func (endpoints) authLogin(ctx *fiber.Ctx) error {
 			goto askStudentID
 		}
 
-		var passwordHash [64]byte
-		if requestData.Password != "" {
-			passwordHash = sha512.Sum512([]byte(requestData.Password))
-		}
-
 		// SID already registered?
 		user, err := database.GetUser(requestData.StudentID)
 		if err != nil && !errors.Is(err, database.ErrNotFound) {
 			return fmt.Errorf("authLogin get user: %w", err)
 		}
-		if user != nil {
-			// Yes: has password?
-			if requestData.Password != "" {
-				// Yes: Is password valid?
-				if subtle.ConstantTimeCompare(passwordHash[:], user.PasswordHash) == 1 {
-					// Yes: issue token, redirect
-					goto success
-				}
 
-				// No: return to start with error
-				requestProblem = "Invalid password - that password did not match the password that is stored for that student ID."
-				goto reset
-			} else {
-				// No: show form
-				goto registeredAskPassword
-			}
+		if user != nil {
+			goto success
 		}
 
 		guildMember, err := guildScraper.GetMember(requestData.StudentID)
@@ -107,60 +72,10 @@ func (endpoints) authLogin(ctx *fiber.Ctx) error {
 			goto reset
 		}
 
-		// Has names?
-		if requestData.FirstName == "" && requestData.LastName == "" {
-			// No: show names form
-			goto askNames
-		}
-
-		if subtle.ConstantTimeCompare([]byte(strings.ToLower(requestData.FirstName)), []byte(strings.ToLower(guildMember.FirstName))) == 0 ||
-			subtle.ConstantTimeCompare([]byte(strings.ToLower(requestData.LastName)), []byte(strings.ToLower(guildMember.LastName))) == 0 {
-			requestProblem = "Invalid name - please ensure that you are using the name the Guild of Students knows you as."
-			goto reset
-		}
-
-		// Will be an admin?
-		if guildMember.IsCommitteeMember {
-			// Yes: has auth code?
-			if requestData.AuthCode == "" {
-				// No: show form
-				goto askAuthCode
-			}
-
-			if subtle.ConstantTimeCompare([]byte(requestData.AuthCode), []byte(config.Get().Platform.AdminToken)) == 0 {
-				requestProblem = "Invalid admin token."
-				goto reset
-			}
-		}
-
-		// Has password and password confirmation?
-		if requestData.PasswordConfirmation == "" || requestData.Password == "" {
-			// No: show form
-			goto unregisteredAskPassword
-		}
-
-		if requestData.PasswordConfirmation != requestData.Password {
-			requestProblem = "Passwords do not match."
-
-			// Since unregisteredAskPassword still includes previous request data, we need to remove the old passwords to prevent them from overriding the new passwords the user will input.
-			// If this were not done, a user that entered an non-matching password pair would never be able to set their password.
-
-			requestData.Password = ""
-			requestData.PasswordConfirmation = ""
-
-			requestDataJSON, err = json.Marshal(&requestData)
-			if err != nil {
-				return fmt.Errorf("authLogin marshal request data to JSON after removing passwords: %w", err)
-			}
-
-			goto unregisteredAskPassword
-		}
-
 		user = &database.User{
 			StudentID:    requestData.StudentID,
 			Name:         guildMember.FirstName + " " + guildMember.LastName,
-			PasswordHash: passwordHash[:],
-			IsAdmin:      guildMember.IsCommitteeMember,
+			IsAdmin:      subtle.ConstantTimeCompare([]byte(requestData.StudentID), []byte(config.Get().Platform.AdminSID)) == 1, //Checks if user is admin
 		}
 
 		if err := user.Insert(); err != nil {
@@ -182,60 +97,10 @@ askStudentID:
 		g.Attr("hx-swap", "outerHTML"),
 		g.If(requestProblem != "", html.P(
 			g.Attr("style", "color: red;"),
-			html.Em(g.Text(requestProblem+" If you're having trouble logging in, please speak to a member of committee.")),
+			html.Em(g.Text(requestProblem+" If you're having trouble logging in, please speak to a member of the committee.")),
 		)),
 		htmlutil.SmallTitle("What's your student ID?"),
 		htmlutil.FormInput("text", "studentid", "Your student ID", "Student ID"),
-		htmlutil.FormSubmitButton(),
-	))
-
-registeredAskPassword:
-	return htmlutil.SendFragment(ctx, html.FormEl(
-		g.Attr("hx-indicator", "#indicator"),
-		g.Attr("hx-post", loginActionEndpoint),
-		g.Attr("hx-swap", "outerHTML"),
-		g.Attr("hx-vals", string(requestDataJSON)),
-		html.P(g.Text("Please enter your password. If you've forgotten it, please speak to a member of committee.")),
-		htmlutil.FormInput("password", "password", "", "Password"),
-		htmlutil.FormSubmitButton(),
-	))
-
-askNames:
-	return htmlutil.SendFragment(ctx, html.FormEl(
-		g.Attr("hx-indicator", "#indicator"),
-		g.Attr("hx-post", loginActionEndpoint),
-		g.Attr("hx-swap", "outerHTML"),
-		g.Attr("hx-vals", string(requestDataJSON)),
-		html.P(g.Text("In order to check that the student ID you entered is yours, please enter your name as the Guild of Students knows it.")),
-		htmlutil.FormInput("text", "fname", "Your first name", "First name"),
-		htmlutil.FormInput("text", "lname", "Your last name", "Last name"),
-		htmlutil.FormSubmitButton(),
-	))
-
-askAuthCode:
-	return htmlutil.SendFragment(ctx, html.FormEl(
-		g.Attr("hx-indicator", "#indicator"),
-		g.Attr("hx-post", loginActionEndpoint),
-		g.Attr("hx-swap", "outerHTML"),
-		g.Attr("hx-vals", string(requestDataJSON)),
-		html.P(g.Text("Please enter the authorisation code.")),
-		htmlutil.FormInput("password", "auth", "", "Authorisation code"),
-		htmlutil.FormSubmitButton(),
-	))
-
-unregisteredAskPassword:
-	return htmlutil.SendFragment(ctx, html.FormEl(
-		g.Attr("hx-indicator", "#indicator"),
-		g.Attr("hx-post", loginActionEndpoint),
-		g.Attr("hx-swap", "outerHTML"),
-		g.Attr("hx-vals", string(requestDataJSON)),
-		g.If(requestProblem != "", html.P(
-			g.Attr("style", "color: red;"),
-			html.Em(g.Text(requestProblem)),
-		)),
-		html.P(g.Text("Please choose a password.")),
-		htmlutil.FormInput("password", "password", "", "Password"),
-		htmlutil.FormInput("password", "passwordconf", "", "Confirm password"),
 		htmlutil.FormSubmitButton(),
 	))
 

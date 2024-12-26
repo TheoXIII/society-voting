@@ -20,7 +20,7 @@ Ensure that the following keys are changed:
  - `guild.sessionToken` should be set to the value of the `.ASPXAUTH` cookie from the Guild of Students website
  - `platform.discordWebhook.url` should be set to a Discord webhook URL. This is optional.
  - `platform.discordWebhook.threadID` should be set to a Discord thread ID that webhook messages should be sent in. This is optional. If specified, the thread should be in the same channel that the webhook is associated with.
- - `platform.adminToken` should be changed
+ - `platform.adminSID` should be changed to the student ID of the admin
 
 ```yaml
 http:
@@ -30,7 +30,7 @@ guild:
   societyID: "6531"
 platform:
   societyName: "CSS"
-  adminToken: "plzletmeadmin"
+  adminSID: "plzletmeadmin"
   discordWebhook:
     url: "Discord webhook URL (optional)"
     threadID: "Discord thread ID (optional)"

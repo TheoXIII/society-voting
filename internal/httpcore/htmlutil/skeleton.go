@@ -23,7 +23,7 @@ func SkeletonPage(title string, content ...g.Node) g.Node {
 			g.Attr("class", "d-flex align-items-center py-4 bg-body-tertiary"),
 			Main(
 				g.Attr("class", "form-signin w-100 m-auto"),
-				Img(g.Attr("src", "https://cssuob.github.io/resources/dinosaur/raster/tex_ballot.png"), g.Attr("style", "max-height: 72px; margin-bottom: 15px;")),
+				Img(g.Attr("src", "https://www.guildofstudents.com/asset/Organisation/6419/cathsoc%20logo.png"), g.Attr("style", "max-height: 72px; margin-bottom: 15px;")),
 				g.Group(content),
 				P(
 					g.Attr("class", "mt-3 mb-3 text-body-secondary"),
