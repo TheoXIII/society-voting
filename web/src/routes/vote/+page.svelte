@@ -12,7 +12,6 @@
 
 	let ballot: Array<BallotEntryT | undefined> = Array.from(Array($currentElection?.ballot.length));
 	let errors = Array.from(Array(ballot.length));
-	let codeInput: HTMLInputElement;
 	let votedDialog: HTMLDialogElement;
 
 	$: if (!$currentElection) {
@@ -40,7 +39,7 @@
 		const votes = ballot.filter((x) => x).map((b) => b?.id);
 		const response = await fetch(API.ELECTION_CURRENT_VOTE, {
 			method: "POST",
-			body: JSON.stringify({ vote: votes, code: codeInput.value.trim().toUpperCase() }),
+			body: JSON.stringify({ vote: votes }),
 		});
 		if (!response.ok) {
 			$error = new Error(await response.text());
@@ -77,7 +76,6 @@
 
 <Panel title="Submit" kind="emphasis">
 	<div class="submit-container">
-		<input bind:this={codeInput} placeholder="Enter election code" type="text" />
 		<Button
 			kind="primary"
 			text="Submit vote"
@@ -93,12 +91,6 @@
 	bind:dialog={votedDialog}
 	on:close={() => goto($user.isAdmin ? "/stats" : "/")}
 >
-	<div class="dialog-container">
-		<img src={`https://cssuob.github.io/resources/dinosaur/tex_ballot.svg`} width="200px" />
-		<p>
-			Don't forget to grab the special edition <strong>voting TeX sticker</strong> afterwards!
-		</p>
-	</div>
 	<Button slot="actions" text="Close" kind="emphasis" />
 </Dialog>
 

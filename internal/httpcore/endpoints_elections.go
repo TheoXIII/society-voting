@@ -2,13 +2,11 @@ package httpcore
 
 import (
 	"bufio"
-	"crypto/subtle"
 	"errors"
 	"fmt"
 	"log/slog"
 	"math/rand"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/CSSUoB/society-voting/internal/database"
@@ -161,18 +159,10 @@ func (endpoints) apiVote(ctx *fiber.Ctx) error {
 
 	var request = struct {
 		Vote []int  `json:"vote" validate:"unique"`
-		Code string `json:"code" validate:"required"`
 	}{}
 
 	if err := parseAndValidateRequestBody(ctx, &request); err != nil {
 		return err
-	}
-
-	if subtle.ConstantTimeCompare([]byte(strings.ToUpper(request.Code)), []byte(voteCode)) == 0 {
-		return &fiber.Error{
-			Code:    fiber.StatusForbidden,
-			Message: "Incorrect vote code!",
-		}
 	}
 
 	tx, err := database.GetTx()
