@@ -28,7 +28,8 @@ type Database struct {
 
 type Platform struct {
 	SocietyName         string
-	AdminSID          string
+	AdminSID            string
+	AdminToken			string
 	SessionSigningToken string
 	DiscordWebhook      *DiscordWebhook
 }
@@ -75,7 +76,8 @@ func Get() *Config {
 			},
 			Platform: &Platform{
 				SocietyName:         cl.WithDefault("platform.societyName", "Society").AsString(),
-				AdminSID:          cl.Required("platform.adminSID").AsString(),
+				AdminSID:            cl.Required("platform.adminSID").AsString(),
+				AdminToken:          cl.Required("platform.adminToken").AsString(),
 				SessionSigningToken: cl.Get("platform.sessionSigningToken").AsString(),
 				DiscordWebhook: &DiscordWebhook{
 					URL:      cl.Get("platform.discordWebhook.url").AsString(),

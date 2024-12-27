@@ -6,7 +6,6 @@
 	import List from "$lib/list.svelte";
 	import Panel from "$lib/panel.svelte";
 
-	import run from "$lib/assets/run_for_election.svg";
 	import { currentElection, elections, error, fetching, user } from "../../../store";
 	import { goto } from "$app/navigation";
 	import { API } from "$lib/endpoints";
@@ -90,12 +89,11 @@
 
 {#if !election?.candidates?.some((c) => c.isMe)}
 	<Banner title="Interested in running?" kind="emphasis">
-		<img slot="image" src={run} alt="" class="banner-image" />
 		<svelte:fragment slot="content">
 			<p>
 				If you're thinking of running for election, go for it! Being on committee is super
-				rewarding, super good fun, and a great way to bolster your CV and give back to the
-				community.
+				rewarding, super good fun, and a great way to bolster your CV and give back to
+				CathSoc.
 			</p>
 			<br />
 			<Button

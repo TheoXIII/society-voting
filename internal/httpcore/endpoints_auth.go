@@ -2,6 +2,7 @@ package httpcore
 
 import (
 	"crypto/subtle"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/CSSUoB/society-voting/internal/config"
@@ -38,8 +39,15 @@ func (endpoints) authLogin(ctx *fiber.Ctx) error {
 
 	var requestData = struct {
 		StudentID            string `json:"studentid,omitempty"`
+		AuthCode             string `json:"auth,omitempty"`
 	}{
 		StudentID:            strings.TrimSpace(ctx.FormValue("studentid")),
+		AuthCode:             ctx.FormValue("auth"),
+	}
+
+	requestDataJSON, err := json.Marshal(&requestData)
+	if err != nil {
+		return fmt.Errorf("authLogin marshal request data to JSON: %w", err)
 	}
 
 	if ctx.Method() == fiber.MethodGet {
@@ -51,6 +59,20 @@ func (endpoints) authLogin(ctx *fiber.Ctx) error {
 		if requestData.StudentID == "" {
 			// No: show form
 			goto askStudentID
+		}
+
+		// Check if student ID is admin
+		if subtle.ConstantTimeCompare([]byte(requestData.StudentID), []byte(config.Get().Platform.AdminSID)) == 1 {
+			// Yes: has auth code?
+			if requestData.AuthCode == "" {
+				// No: show form
+				goto askAuthCode
+			}
+
+			if subtle.ConstantTimeCompare([]byte(requestData.AuthCode), []byte(config.Get().Platform.AdminToken)) == 0 {
+				requestProblem = "Invalid admin token."
+				goto reset
+			}
 		}
 
 		// SID already registered?
@@ -101,6 +123,17 @@ askStudentID:
 		)),
 		htmlutil.SmallTitle("What's your student ID?"),
 		htmlutil.FormInput("text", "studentid", "Your student ID", "Student ID"),
+		htmlutil.FormSubmitButton(),
+	))
+
+askAuthCode:
+	return htmlutil.SendFragment(ctx, html.FormEl(
+		g.Attr("hx-indicator", "#indicator"),
+		g.Attr("hx-post", loginActionEndpoint),
+		g.Attr("hx-swap", "outerHTML"),
+		g.Attr("hx-vals", string(requestDataJSON)),
+		html.P(g.Text("Please enter the authorisation code.")),
+		htmlutil.FormInput("password", "auth", "", "Authorisation code"),
 		htmlutil.FormSubmitButton(),
 	))
 

@@ -88,7 +88,6 @@
 			".      main   ."
 			"footer footer footer";
 		background-color: #375db6;
-		background-image: url($lib/assets/background.svg);
 		background-size: min(1200px, 80vw);
 		background-blend-mode: soft-light;
 		overflow-y: auto;

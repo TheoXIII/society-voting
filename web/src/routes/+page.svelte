@@ -13,7 +13,7 @@
 </script>
 
 <svelte:head>
-	<title>CSS Elects</title>
+	<title>CathSoc Elects</title>
 </svelte:head>
 
 <Panel title="There are no upcoming elections">
