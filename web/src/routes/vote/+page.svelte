@@ -12,6 +12,7 @@
 	import Input from "$lib/input.svelte";
 	import { isElectionPoll, isReferendumPoll } from "$lib/poll";
 
+
 	let votedDialog: HTMLDialogElement;
 	let voteCode: string;
 	let validBallot: boolean;
@@ -39,8 +40,9 @@
 
 		const response = await fetch(url, {
 			method: "POST",
-			body: JSON.stringify({ vote: votes }),
+			body: JSON.stringify({ id: $currentPoll.poll.id, vote: choices }),
 		});
+
 
 		if (!response.ok) {
 			$error = new Error(await response.text());

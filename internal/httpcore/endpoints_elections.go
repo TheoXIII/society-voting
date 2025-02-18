@@ -9,7 +9,6 @@ import (
 	"slices"
 	"sort"
 	"time"
-
 	"github.com/CSSUoB/society-voting/internal/database"
 	"github.com/CSSUoB/society-voting/internal/events"
 	"github.com/gofiber/fiber/v2"
@@ -169,6 +168,7 @@ func (endpoints) apiGetActivePollInformation(ctx *fiber.Ctx) error {
 
 func apiVote(ctx *fiber.Ctx, fetchPoll func(int, bun.Tx) (*database.Poll, error), validateVote func(int, []int, bun.Tx) error) error {
 	userID := ctx.Locals("userID").(string)
+	fmt.Println(userID)
 
 	var request = struct {
 		ID   int    `json:"id" validate:"required"`

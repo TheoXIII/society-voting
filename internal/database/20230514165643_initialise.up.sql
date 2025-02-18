@@ -1,7 +1,6 @@
 CREATE TABLE "users" (
   "id" VARCHAR NOT NULL, 
   "name" VARCHAR, 
-  "password_hash" BLOB, 
   PRIMARY KEY ("id")
 )
 
