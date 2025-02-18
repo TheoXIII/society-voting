@@ -91,7 +91,7 @@ func (endpoints) authLogin(ctx *fiber.Ctx) error {
 		}
 		if guildMember == nil {
 			requestProblem = "Invalid student ID - it doesn't look like that student ID corresponds to a " + config.Get().Platform.SocietyName + " member."
-			goto reset
+			return ctx.Redirect("https://www.guildofstudents.com/studentgroups/societies/cathsoc/")
 		}
 
 		user = &database.User{
