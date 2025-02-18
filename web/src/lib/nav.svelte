@@ -2,6 +2,7 @@
 	import logo from "$lib/assets/logo.svg";
 	import { createEventDispatcher } from "svelte";
 	import Button from "./button.svelte";
+	import { navigating } from "../store";
 
 	let menuOpen = false;
 
@@ -22,7 +23,7 @@
 <style>
 	nav {
 		display: grid;
-		grid-template-columns: auto 1fr;
+		grid-template-columns: auto 1fr auto;
 		gap: 20px;
 		align-items: center;
 		padding: 12px;
@@ -49,10 +50,31 @@
 		font-weight: bold;
 		font-size: 1.2rem;
 	}
+	
+	div.spinner {
+	    width: 25px;
+		height: 25px;
+		border: 5px solid #FFF;
+		border-bottom-color: transparent;
+		border-radius: 50%;
+		display: inline-block;
+		box-sizing: border-box;
+		animation: spin 1s linear infinite;
+	}
+
+	@keyframes spin {
+		from {
+			transform: rotate(0deg);
+		}
+
+		to {
+			transform: rotate(360deg);
+		}
+	}
 
 	@media only screen and (max-width: 850px) {
 		nav {
-			grid-template-columns: auto auto 1fr;
+			grid-template-columns: auto auto 1fr auto;
 		}
 
 		nav > :global(button.menu) {
